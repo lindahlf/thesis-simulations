@@ -14,4 +14,4 @@ The functionalities contained in code in this repo are
   - How the scores are separated for between the null and alternative hypotheses.
   - How the sum of type I and II errors change as a function of sparsity or weakness.
   
-In particular, the above functionalities will be used to investigate how these methods perform on the so-called detection boundary (see Donoho and Jin (2004)).
+In particular, the above functionalities will be used to investigate how these methods perform close to and on the so-called detection boundary (see Donoho and Jin (2004)).
