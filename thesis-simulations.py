@@ -19,7 +19,8 @@ def HC(p_values):
 
 def phi_test(p_values,s):
     """ Computes Jager and Wellner's (2007) phi-divergence based test.
-    s = 2 corresponds to standard HC. """
+    s = 2 corresponds to standard HC.
+    """
     p_values = np.sort(p_values)
     v = p_values # use notation of Jager and Wellner
     n = len(v) # number of datapoints
@@ -49,7 +50,8 @@ def weight_ks(p_values):
 def gaussian_mixture(n,beta,r):
     """ Returns a sparse Gaussian mixture and a standard Gaussian of size n.
     Standard corresponds to the null hypothesis,
-    the mixture corresponds to alternative hypothesis. See Donoho and Jin (2004)"""
+    the mixture corresponds to alternative hypothesis. See Donoho and Jin (2004)
+    """
     epsilon = n**(-beta)
     if beta >= 0.5:
         mu = np.sqrt(2*r*np.log(n))
@@ -66,7 +68,7 @@ def calc_pvalue(data):
     """ Returns one-sided p-value of input array of data """
     return (1 - norm.cdf(data))
 
-def simulate_scores(n,beta,r,repetitions,func,*args):
+def simulate_scores(n,beta,r,repetitions,method,*args):
     """ Computes scores for a given detection method for a number of repetitions. """
     null_scores = [None] * repetitions
     alt_scores = [None] * repetitions
@@ -74,11 +76,36 @@ def simulate_scores(n,beta,r,repetitions,func,*args):
         null_samples, alt_samples = gaussian_mixture(n,beta,r)
         null_p = calc_pvalue(null_samples)
         alt_p = calc_pvalue(alt_samples)
-        null_scores[i] = func(null_p,*args)
-        alt_scores[i] = func(alt_p,*args)
+        null_scores[i] = method(null_p,*args)
+        alt_scores[i] = method(alt_p,*args)
     return null_scores, alt_scores
 
 # TODO: write function to empirically determine critical value for an alpha-level test
+#       Use Jin's threshold as comparison for sanity check:
+#       H = (HCT/sqrt(2*log(log(n)))/(1 + 1/sqrt(log(log(n)))) > 1)*1;
+#       where HCT is obtained HC. 1 indicates that null hypothesis is rejected
+
+def critical_value(n,alpha,method,*args):
+    """ Simulates a threshold above which to reject the null hypothesis for a significance level alpha
+        for a given method
+    """
+    N = int(round(50/alpha))
+    iter = 100
+    thresh_vec = [None] * iter
+    for i in tqdm(range(iter)):
+        scores = [None] * N
+        for j in range(N): # N replicates averaged over 100 iterations
+            null_samples = np.random.normal(0, 1, n)
+            p_values = calc_pvalue(null_samples)
+            scores[j] = method(p_values,*args)
+        thresh_vec[i] = np.percentile(scores,100*(1-alpha))
+    threshold = np.mean(thresh_vec)
+    print('Method: ', str(method.__name__))
+    print('Significance level: ', str(alpha))
+    print('Number of samples: ', str(n))
+    print('Threshold: ', str(threshold))
+    return threshold # Returns top alpha percentile of simulated scores
+
 
 ################
 # Main program #
@@ -90,15 +117,16 @@ def main():
     n = int(1e4)
     beta = 0.6
     r = 0.8
-    null_scores, alt_scores = simulate_scores(n,beta,r,100,weight_ks)
-    null_HC, alt_HC = simulate_scores(n,beta,r,100,HC)
-    fig, axs = plt.subplots(2)
-    fig.suptitle('Simulated scores')
-    axs[0].hist(null_scores, bins = 100, range = [0,100])
-    axs[0].hist(alt_scores, bins = 100, range = [0,100])
-    axs[1].hist(null_HC, bins = 100, range = [0,100])
-    axs[1].hist(alt_HC, bins = 100, range = [0,100])
-    mplcyberpunk.add_glow_effects()
-    plt.show()
+    critical_value(n,0.05,phi_test,2)
+    # null_scores, alt_scores = simulate_scores(n,beta,r,100,weight_ks)
+    # null_HC, alt_HC = simulate_scores(n,beta,r,100,HC)
+    # fig, axs = plt.subplots(2)
+    # fig.suptitle('Simulated scores')
+    # axs[0].hist(null_scores, bins = 100, range = [0,100])
+    # axs[0].hist(alt_scores, bins = 100, range = [0,100])
+    # axs[1].hist(null_HC, bins = 100, range = [0,100])
+    # axs[1].hist(alt_HC, bins = 100, range = [0,100])
+    # mplcyberpunk.add_glow_effects()
+    # plt.show()
 
 main()
