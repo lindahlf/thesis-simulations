@@ -10,21 +10,21 @@ plt.style.use("cyberpunk")
 
 def HC(p_values):
     """ Compute higher criticism-statistic based on version by Donoho and Jin (2004) """
-    p_values = np.sort(p_values) # Make sure p-values are sorted
+    p_values = np.sort(p_values) # Make sure p-values are sorted in ascending order
     n = len(p_values) # Number of data points
-    ivalues = np.arange(1,int(round(n/2)) + 1)
-    p_values = p_values[0:int(round(n/2))] # Cut-off half of the values
-    HC_vec = np.sqrt(n)*(ivalues/n - p_values)/np.sqrt(p_values - p_values**2) # Calculate scores for all datapoints
+    ivalues = np.arange(1,n + 1)
+    #p_values = p_values[0:int(round(n/2))] # Cut-off half of the values
+    HC_vec = np.sqrt(n)*(ivalues/(n+1) - p_values)/np.sqrt(p_values - p_values**2) # Calculate scores for all datapoints
     return np.max(HC_vec)
 
 def phi_test(p_values,s):
     """ Computes Jager and Wellner's (2007) phi-divergence based test.
     s = 2 corresponds to standard HC.
     """
-    p_values = np.sort(p_values)
+    p_values = np.sort(p_values) #sorting in ascending order
     v = p_values # use notation of Jager and Wellner
     n = len(v) # number of datapoints
-    u = np.arange(1,n+1)/n
+    u = np.arange(1,n+1)/(n+1)
     K = v*_phi(s,u/v) + (1-v)*_phi(s,(1-u)/(1-v)) #Calculate score for all datapoints
     return np.max(K)
 
@@ -37,14 +37,12 @@ def _phi(s,x):
     else:
         return (1-s+s*x-x**s)/(s*(1-s))
 
-# TODO: implement weighted Kolmogorov-Smirnoff statistic
-
 def weight_ks(p_values):
     """Computes CsCsHM statistic based on results by Stepanova and Pavlenko (2018)"""
     u = np.sort(p_values) # Assert p-values are sorted, translate to notation of Stepanova and Pavlenko
     n = len(u) # Number of data points
     ivalues = np.arange(1,n+1)
-    T = np.sqrt(n)*(ivalues/n - u)/np.sqrt(u*(1-u)*np.log(np.log(1/(u*(1-u)))))
+    T = np.sqrt(n)*(ivalues/(n+1) - u)/np.sqrt(u*(1-u)*np.log(np.log(1/(u*(1-u)))))
     return np.max(T)
 
 def gaussian_mixture(n,beta,r):
@@ -64,9 +62,12 @@ def gaussian_mixture(n,beta,r):
     assert len(null_samples) == len(alt_samples)
     return null_samples, alt_samples
 
-def calc_pvalue(data):
-    """ Returns one-sided p-value of input array of data """
-    return (1 - norm.cdf(data))
+def calc_pvalue(data,two_side = False):
+    """ Returns one-sided (default) or two-sided p-values of input array of data """
+    if two_side:
+        return 2*(1-norm.cdf(np.abs(data)))
+    else:
+        return (1 - norm.cdf(data))
 
 def simulate_scores(n,beta,r,repetitions,method,*args):
     """ Computes scores for a given detection method for a number of repetitions. """
@@ -79,11 +80,6 @@ def simulate_scores(n,beta,r,repetitions,method,*args):
         null_scores[i] = method(null_p,*args)
         alt_scores[i] = method(alt_p,*args)
     return null_scores, alt_scores
-
-# TODO: write function to empirically determine critical value for an alpha-level test
-#       Use Jin's threshold as comparison for sanity check:
-#       H = (HCT/sqrt(2*log(log(n)))/(1 + 1/sqrt(log(log(n)))) > 1)*1;
-#       where HCT is obtained HC. 1 indicates that null hypothesis is rejected
 
 def critical_value(n,alpha,method,*args):
     """ Simulates a threshold above which to reject the null hypothesis for a significance level alpha
@@ -101,6 +97,8 @@ def critical_value(n,alpha,method,*args):
         thresh_vec[i] = np.percentile(scores,100*(1-alpha))
     threshold = np.mean(thresh_vec)
     print('Method: ', str(method.__name__))
+    if len(args) != 0:
+        print('Parameter = ', str(args[0]))
     print('Significance level: ', str(alpha))
     print('Number of samples: ', str(n))
     print('Threshold: ', str(threshold))
@@ -119,14 +117,16 @@ def main():
     r = 0.8
     critical_value(n,0.05,phi_test,2)
     # null_scores, alt_scores = simulate_scores(n,beta,r,100,weight_ks)
-    # null_HC, alt_HC = simulate_scores(n,beta,r,100,HC)
+    # #  null_HC, alt_HC = simulate_scores(n,beta,r,100,HC)
     # fig, axs = plt.subplots(2)
     # fig.suptitle('Simulated scores')
-    # axs[0].hist(null_scores, bins = 100, range = [0,100])
-    # axs[0].hist(alt_scores, bins = 100, range = [0,100])
-    # axs[1].hist(null_HC, bins = 100, range = [0,100])
-    # axs[1].hist(alt_HC, bins = 100, range = [0,100])
+    # axs[0].hist(null_scores, bins = 100, range = [0,1000])
+    # axs[1].hist(alt_scores, bins = 100, range = [0,1000])
+    # # #axs[1].hist(null_HC, bins = 100, range = [0,100])
+    # # #axs[1].hist(alt_HC, bins = 100, range = [0,100])
     # mplcyberpunk.add_glow_effects()
     # plt.show()
+
+
 
 main()
