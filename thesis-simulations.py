@@ -104,6 +104,46 @@ def critical_value(n,alpha,method,*args):
     print('Threshold: ', str(threshold))
     return threshold # Returns top alpha percentile of simulated scores
 
+#TODO: write function to show sum of type I and II errors
+def error_sums(n,r,beta,repetitions,threshold,verbose,method, *args):
+    #check whether r or beta is array of values, then loop over that
+    print(verbose)
+    if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
+        errors = [None] * len(r)
+        for i in tqdm(range(len(r))):
+            null_scores, alt_scores = simulate_scores(n,beta,r[i],repetitions,method,*args)
+            # 1 if null is rejected,zero otherwise
+            null_scores = np.asarray(null_scores)
+            alt_scores = np.asarray(alt_scores)
+            null_scores = np.where(null_scores <= threshold, null_scores, 0)
+            null_scores = np.where(null_scores > threshold, null_scores, 1)
+            alt_scores = np.where(alt_scores <= threshold, alt_scores, 0)
+            alt_scores = np.where(alt_scores > threshold, alt_scores, 1)
+            typeI = np.sum(null_scores)/repetitions
+            typeII = (repetitions-np.sum(alt_scores))/(repetitions)
+            print('Type I = ', str(typeI))
+            print('Type II = ', str(typeII))
+            errors[i] = typeI + typeII
+        print(errors)
+        if verbose:
+            plt.plot(r,errors,'*')
+            plt.show()
+    elif hasattr(beta, "__len__") and hasattr(r, "__len__") == False:
+        errors = [None] * len(beta)
+        for i in tqdm(range(len(beta))):
+            null_scores, alt_scores = simulate_scores(n,beta[i],r,repetitions,method,*args)
+            null_scores = np.where(null_scores <= threshold, null_scores, 0)
+            null_scores = np.where(null_scores > threshold, null_scores, 1)
+            alt_scores = np.where(alt_scores <= threshold, alt_scores, 0)
+            alt_scores = np.where(alt_scores > threshold, alt_scores, 1)
+            errors[i] = np.sum(null_scores)/repetitions + (repetitions-np.sum(alt_scores))/(repetitions)
+        if verbose:
+            plt.plot(beta, errors)
+            plt.show()
+    return
+
+#TODO: implement get_threshold function that returns threshold given method and sample size
+
 
 ################
 # Main program #
@@ -112,10 +152,11 @@ def critical_value(n,alpha,method,*args):
 # Example use
 
 def main():
-    n = int(1e4)
-    beta = 0.6
-    r = 0.8
-    critical_value(n,0.05,phi_test,2)
+    n = int(1e2)
+    beta = 0.8
+    r = np.linspace(0.8,0.9,20)
+    #critical_value(n,0.05,phi_test,2)
+    error_sums(n,r,beta,100,4.68,False,HC)
     # null_scores, alt_scores = simulate_scores(n,beta,r,100,weight_ks)
     # #  null_HC, alt_HC = simulate_scores(n,beta,r,100,HC)
     # fig, axs = plt.subplots(2)
