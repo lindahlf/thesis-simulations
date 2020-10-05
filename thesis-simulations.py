@@ -6,6 +6,7 @@ from scipy.stats import norm
 import matplotlib.patches as mpatches
 from tqdm import tqdm
 
+#plt.style.use("seaborn")
 plt.style.use("cyberpunk")
 
 def HC(p_values):
@@ -95,54 +96,63 @@ def critical_value(n,alpha,method,*args):
             p_values = calc_pvalue(null_samples)
             scores[j] = method(p_values,*args)
         thresh_vec[i] = np.percentile(scores,100*(1-alpha))
-    threshold = np.mean(thresh_vec)
+    crit_value = np.mean(thresh_vec)
     print('Method: ', str(method.__name__))
     if len(args) != 0:
         print('Parameter = ', str(args[0]))
     print('Significance level: ', str(alpha))
     print('Number of samples: ', str(n))
-    print('Threshold: ', str(threshold))
-    return threshold # Returns top alpha percentile of simulated scores
+    print('Critical value: ', str(crit_value))
+    return crit_value # Returns top alpha percentile of simulated scores
 
-#TODO: write function to show sum of type I and II errors
-def error_sums(n,r,beta,repetitions,threshold,verbose,method, *args):
+def plot_errorsum(n,r,beta,repetitions,threshold,verbose,method, *args):
+    """Plots sum of type I and II errors as a function of either r or beta"""
     #check whether r or beta is array of values, then loop over that
-    print(verbose)
     if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
         errors = [None] * len(r)
         for i in tqdm(range(len(r))):
             null_scores, alt_scores = simulate_scores(n,beta,r[i],repetitions,method,*args)
-            # 1 if null is rejected,zero otherwise
             null_scores = np.asarray(null_scores)
             alt_scores = np.asarray(alt_scores)
-            null_scores = np.where(null_scores <= threshold, null_scores, 0)
-            null_scores = np.where(null_scores > threshold, null_scores, 1)
-            alt_scores = np.where(alt_scores <= threshold, alt_scores, 0)
-            alt_scores = np.where(alt_scores > threshold, alt_scores, 1)
+            # 1 if null is rejected,zero otherwise
+            null_scores = np.where(null_scores > threshold, null_scores, 0)
+            null_scores = np.where(null_scores <= threshold, null_scores, 1)
+            alt_scores = np.where(alt_scores > threshold, alt_scores, 0)
+            alt_scores = np.where(alt_scores <= threshold, alt_scores, 1)
             typeI = np.sum(null_scores)/repetitions
             typeII = (repetitions-np.sum(alt_scores))/(repetitions)
-            print('Type I = ', str(typeI))
-            print('Type II = ', str(typeII))
             errors[i] = typeI + typeII
-        print(errors)
         if verbose:
-            plt.plot(r,errors,'*')
+            plt.plot(r,errors)
+            plt.xlabel(r'$r$')
+            plt.ylabel('Error sum')
+            plt.title('Sum of type I and II error for ' + str(method.__name__))
+            plt.legend((r'$n = $' + str(n) + r' $\beta = $' + str(beta),), loc = 'best')
             plt.show()
     elif hasattr(beta, "__len__") and hasattr(r, "__len__") == False:
         errors = [None] * len(beta)
         for i in tqdm(range(len(beta))):
             null_scores, alt_scores = simulate_scores(n,beta[i],r,repetitions,method,*args)
-            null_scores = np.where(null_scores <= threshold, null_scores, 0)
-            null_scores = np.where(null_scores > threshold, null_scores, 1)
-            alt_scores = np.where(alt_scores <= threshold, alt_scores, 0)
-            alt_scores = np.where(alt_scores > threshold, alt_scores, 1)
+            null_scores = np.where(null_scores > threshold, null_scores, 0)
+            null_scores = np.where(null_scores <= threshold, null_scores, 1)
+            alt_scores = np.where(alt_scores > threshold, alt_scores, 0)
+            alt_scores = np.where(alt_scores <= threshold, alt_scores, 1)
             errors[i] = np.sum(null_scores)/repetitions + (repetitions-np.sum(alt_scores))/(repetitions)
         if verbose:
             plt.plot(beta, errors)
+            plt.xlabel(r'$\beta$')
+            plt.ylabel('Error sum')
+            plt.title('Sum of type I and II error for ' + str(method.__name__))
+            plt.legend((r'$n = $' + str(n) + r' $r = $' + str(beta),), loc = 'best')
             plt.show()
     return
 
 #TODO: implement get_threshold function that returns threshold given method and sample size
+def get_threshold(n,method,*args):
+    """Method for extracting threshold for given method and number of samples"""
+    # extract from csv-file
+    if
+    return threshold
 
 
 ################
@@ -152,11 +162,11 @@ def error_sums(n,r,beta,repetitions,threshold,verbose,method, *args):
 # Example use
 
 def main():
-    n = int(1e2)
+    n = int(1e4)
     beta = 0.8
-    r = np.linspace(0.8,0.9,20)
-    #critical_value(n,0.05,phi_test,2)
-    error_sums(n,r,beta,100,4.68,False,HC)
+    r = np.linspace(0.01,0.9,30)
+    #critical_value(n,0.05,HC)
+    plot_errorsum(n,r,beta,100,4.78,True,HC)
     # null_scores, alt_scores = simulate_scores(n,beta,r,100,weight_ks)
     # #  null_HC, alt_HC = simulate_scores(n,beta,r,100,HC)
     # fig, axs = plt.subplots(2)
