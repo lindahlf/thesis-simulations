@@ -2,8 +2,9 @@ import matplotlib.pyplot as plt
 import mplcyberpunk
 import numpy as np
 import random as rnd
-from scipy.stats import norm
 import matplotlib.patches as mpatches
+import json
+from scipy.stats import norm
 from tqdm import tqdm
 
 #plt.style.use("seaborn")
@@ -13,7 +14,7 @@ def HC(p_values):
     """ Compute higher criticism-statistic based on version by Donoho and Jin (2004) """
     p_values = np.sort(p_values) # Make sure p-values are sorted in ascending order
     n = len(p_values) # Number of data points
-    ivalues = np.arange(1,n + 1)
+    ivalues = np.arange(1, n + 1)
     #p_values = p_values[0:int(round(n/2))] # Cut-off half of the values
     HC_vec = np.sqrt(n)*(ivalues/(n+1) - p_values)/np.sqrt(p_values - p_values**2) # Calculate scores for all datapoints
     return np.max(HC_vec)
@@ -38,8 +39,8 @@ def _phi(s,x):
     else:
         return (1-s+s*x-x**s)/(s*(1-s))
 
-def weight_ks(p_values):
-    """Computes CsCsHM statistic based on results by Stepanova and Pavlenko (2018)"""
+def CsCsHM(p_values):
+    """Computes  statistic based on results by Stepanova and Pavlenko (2018)"""
     u = np.sort(p_values) # Assert p-values are sorted, translate to notation of Stepanova and Pavlenko
     n = len(u) # Number of data points
     ivalues = np.arange(1,n+1)
@@ -126,7 +127,10 @@ def plot_errorsum(n,r,beta,repetitions,threshold,verbose,method, *args):
             plt.plot(r,errors)
             plt.xlabel(r'$r$')
             plt.ylabel('Error sum')
-            plt.title('Sum of type I and II error for ' + str(method.__name__))
+            if len(args) != 0:
+                plt.title('Sum of type I and II error for ' + str(method.__name__) + ', s = ' + str(args[0]) )
+            else:
+                plt.title('Sum of type I and II error for ' + str(method.__name__))
             plt.legend((r'$n = $' + str(n) + r' $\beta = $' + str(beta),), loc = 'best')
             plt.show()
     elif hasattr(beta, "__len__") and hasattr(r, "__len__") == False:
@@ -142,16 +146,18 @@ def plot_errorsum(n,r,beta,repetitions,threshold,verbose,method, *args):
             plt.plot(beta, errors)
             plt.xlabel(r'$\beta$')
             plt.ylabel('Error sum')
-            plt.title('Sum of type I and II error for ' + str(method.__name__))
+            if len(args) != 0:
+                plt.title('Sum of type I and II error for ' + str(method.__name__) + ' s = ' + str(args[0]))
+            else:
+                plt.title('Sum of type I and II error for ' + str(method.__name__))
             plt.legend((r'$n = $' + str(n) + r' $r = $' + str(beta),), loc = 'best')
             plt.show()
-    return
+    return errors
 
 #TODO: implement get_threshold function that returns threshold given method and sample size
 def get_threshold(n,method,*args):
     """Method for extracting threshold for given method and number of samples"""
     # extract from csv-file
-    if
     return threshold
 
 
@@ -164,10 +170,10 @@ def get_threshold(n,method,*args):
 def main():
     n = int(1e4)
     beta = 0.8
-    r = np.linspace(0.01,0.9,30)
+    r = np.linspace(0.01,0.9,100)
     #critical_value(n,0.05,HC)
-    plot_errorsum(n,r,beta,100,4.78,True,HC)
-    # null_scores, alt_scores = simulate_scores(n,beta,r,100,weight_ks)
+    #plot_errorsum(n,r,beta,100,0.0021,True,phi_test,2)
+    # null_scores, alt_scores = simulate_scores(n,beta,r,100,CsCsHM)
     # #  null_HC, alt_HC = simulate_scores(n,beta,r,100,HC)
     # fig, axs = plt.subplots(2)
     # fig.suptitle('Simulated scores')
@@ -177,6 +183,7 @@ def main():
     # # #axs[1].hist(alt_HC, bins = 100, range = [0,100])
     # mplcyberpunk.add_glow_effects()
     # plt.show()
+
 
 
 
