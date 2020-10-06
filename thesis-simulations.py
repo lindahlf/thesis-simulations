@@ -4,6 +4,7 @@ import numpy as np
 import random as rnd
 import matplotlib.patches as mpatches
 import json
+import pandas as pd
 from scipy.stats import norm
 from tqdm import tqdm
 
@@ -83,8 +84,8 @@ def simulate_scores(n,beta,r,repetitions,method,*args):
         alt_scores[i] = method(alt_p,*args)
     return null_scores, alt_scores
 
-def critical_value(n,alpha,method,*args):
-    """ Simulates a threshold above which to reject the null hypothesis for a significance level alpha
+def sim_critval(n,alpha,method,*args):
+    """ Simulates a critical value above which to reject the null hypothesis for a significance level alpha
         for a given method
     """
     N = int(round(50/alpha))
@@ -106,9 +107,10 @@ def critical_value(n,alpha,method,*args):
     print('Critical value: ', str(crit_value))
     return crit_value # Returns top alpha percentile of simulated scores
 
-def plot_errorsum(n,r,beta,repetitions,threshold,verbose,method, *args):
+def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
     """Plots sum of type I and II errors as a function of either r or beta"""
     #check whether r or beta is array of values, then loop over that
+    critical_value = get_critval(n,method,*args)
     if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
         errors = [None] * len(r)
         for i in tqdm(range(len(r))):
@@ -116,10 +118,10 @@ def plot_errorsum(n,r,beta,repetitions,threshold,verbose,method, *args):
             null_scores = np.asarray(null_scores)
             alt_scores = np.asarray(alt_scores)
             # 1 if null is rejected,zero otherwise
-            null_scores = np.where(null_scores > threshold, null_scores, 0)
-            null_scores = np.where(null_scores <= threshold, null_scores, 1)
-            alt_scores = np.where(alt_scores > threshold, alt_scores, 0)
-            alt_scores = np.where(alt_scores <= threshold, alt_scores, 1)
+            null_scores = np.where(null_scores > critical_value, null_scores, 0)
+            null_scores = np.where(null_scores <= critical_value, null_scores, 1)
+            alt_scores = np.where(alt_scores > critical_value, alt_scores, 0)
+            alt_scores = np.where(alt_scores <= critical_value, alt_scores, 1)
             typeI = np.sum(null_scores)/repetitions
             typeII = (repetitions-np.sum(alt_scores))/(repetitions)
             errors[i] = typeI + typeII
@@ -137,10 +139,10 @@ def plot_errorsum(n,r,beta,repetitions,threshold,verbose,method, *args):
         errors = [None] * len(beta)
         for i in tqdm(range(len(beta))):
             null_scores, alt_scores = simulate_scores(n,beta[i],r,repetitions,method,*args)
-            null_scores = np.where(null_scores > threshold, null_scores, 0)
-            null_scores = np.where(null_scores <= threshold, null_scores, 1)
-            alt_scores = np.where(alt_scores > threshold, alt_scores, 0)
-            alt_scores = np.where(alt_scores <= threshold, alt_scores, 1)
+            null_scores = np.where(null_scores > critical_value, null_scores, 0)
+            null_scores = np.where(null_scores <= critical_value, null_scores, 1)
+            alt_scores = np.where(alt_scores > critical_value, alt_scores, 0)
+            alt_scores = np.where(alt_scores <= critical_value, alt_scores, 1)
             errors[i] = np.sum(null_scores)/repetitions + (repetitions-np.sum(alt_scores))/(repetitions)
         if verbose:
             plt.plot(beta, errors)
@@ -154,11 +156,15 @@ def plot_errorsum(n,r,beta,repetitions,threshold,verbose,method, *args):
             plt.show()
     return errors
 
-#TODO: implement get_threshold function that returns threshold given method and sample size
-def get_threshold(n,method,*args):
-    """Method for extracting threshold for given method and number of samples"""
-    # extract from csv-file
-    return threshold
+def get_critval(n,method,*args):
+    """Method for extracting critical value for given method and number of samples"""
+    with open('critical_values.json') as file:
+        data = json.load(file)
+    if len(args) != 0:
+        critical_value = data["critical value"][str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]
+    else:
+        critical_value = data["critical value"][str(method.__name__)]["n"][str(n)]
+    return critical_value
 
 
 ################
@@ -171,8 +177,20 @@ def main():
     n = int(1e4)
     beta = 0.8
     r = np.linspace(0.01,0.9,100)
-    #critical_value(n,0.05,HC)
-    #plot_errorsum(n,r,beta,100,0.0021,True,phi_test,2)
+
+    with open("error_sims_results.json") as file:
+        data = json.load(file)
+        data["HC"]["n"][str(n)]["beta_fix"]["result"] = 1
+        json.dump(data,file)
+
+
+
+
+    #sim_critval(n,0.05,HC)
+    #plot_errorsum(n,r,beta,100,True,phi_test,2)
+
+
+
     # null_scores, alt_scores = simulate_scores(n,beta,r,100,CsCsHM)
     # #  null_HC, alt_HC = simulate_scores(n,beta,r,100,HC)
     # fig, axs = plt.subplots(2)
