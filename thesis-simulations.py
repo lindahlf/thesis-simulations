@@ -109,7 +109,6 @@ def sim_critval(n,alpha,method,*args):
 
 def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
     """Plots sum of type I and II errors as a function of either r or beta"""
-    #check whether r or beta is array of values, then loop over that
     critical_value = get_critval(n,method,*args)
     if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
         errors = [None] * len(r)
@@ -161,12 +160,45 @@ def get_critval(n,method,*args):
     with open('critical_values.json') as file:
         data = json.load(file)
     if len(args) != 0:
-        critical_value = data["critical value"][str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]
+        critical_value = data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]
     else:
-        critical_value = data["critical value"][str(method.__name__)]["n"][str(n)]
+        critical_value = data[str(method.__name__)]["n"][str(n)]
     return critical_value
 
+def log_errorsim(filename, n, beta, r, result, method, *args):
+    """Logs error simulation data for the given parameters"""
+    with open(filename) as file:
+        data = json.load(file)
+    if len(args) != 0:
+        if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
+            data[str(method)]["n"][str(n)][parameters][str(args[0])]["beta_fix"]["result"] = result
+            data[str(method)]["n"][str(n)][parameters][str(args[0])]["beta_fix"]["beta"] = beta
+            data[str(method)]["n"][str(n)][parameters][str(args[0])]["beta_fix"]["r"] = r
 
+        elif hasattr(beta, "__len__") and hasattr(r, "__len__") == False:
+                data[str(method)]["n"][str(n)][parameters][str(args[0])]["r_fix"]["result"] = result
+                data[str(method)]["n"][str(n)][parameters][str(args[0])]["r_fix"]["beta"] = beta
+                data[str(method)]["n"][str(n)][parameters][str(args[0])]["r_fix"]["r"] = r
+    else:
+        if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
+            data[str(method)]["n"][str(n)]["beta_fix"]["result"] = result
+            data[str(method)]["n"][str(n)]["beta_fix"]["beta"] = beta
+            data[str(method)]["n"][str(n)]["beta_fix"]["r"] = r
+
+        elif hasattr(beta, "__len__") and hasattr(r, "__len__") == False:
+                data[str(method)]["n"][str(n)]["r_fix"]["result"] = result
+                data[str(method)]["n"][str(n)]["r_fix"]["beta"] = beta
+                data[str(method)]["n"][str(n)]["r_fix"]["r"] = r
+
+    with open(filename, 'w') as outfile:
+        json.dump(data, outfile)
+    return
+
+def foofunc(n,*args):
+
+    if len(args) != 0:
+        print("hej kom o hjälp mig")
+    return
 ################
 # Main program #
 ################
@@ -174,19 +206,14 @@ def get_critval(n,method,*args):
 # Example use
 
 def main():
-    n = int(1e4)
+    n = int(1e2)
     beta = 0.8
     r = np.linspace(0.01,0.9,100)
-
-    with open("error_sims_results.json") as file:
-        data = json.load(file)
-        data["HC"]["n"][str(n)]["beta_fix"]["result"] = 1
-        json.dump(data,file)
+    method = HC
+    result = plot_errorsum(n,r,beta,100,False,method)
+    log_errorsim('error_sims_results.json',n,beta,r,result,HC)
 
 
-
-
-    #sim_critval(n,0.05,HC)
     #plot_errorsum(n,r,beta,100,True,phi_test,2)
 
 
