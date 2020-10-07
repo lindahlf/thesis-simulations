@@ -164,7 +164,7 @@ def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
     return errors
 
 def get_critval(n,method,*args):
-    """Method for extracting critical value for given method and number of samples"""
+    """ Method for extracting critical value for given method and number of samples """
     with open('critical_values.json') as file:
         data = json.load(file)
     if len(args) != 0:
@@ -206,10 +206,9 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
         json.dump(data, outfile)
     return
 
-def footest(n,*args):
-    if len(args) != 0:
-        print("failure")
-    return
+
+
+
 
 ################
 # Main program #
@@ -218,15 +217,36 @@ def footest(n,*args):
 # Example use
 
 def main():
-    n = int(1e4)
+    n = int(1e2)
     beta = 0.8
     r = np.linspace(0.01,0.9,100)
     method = phi_test
-    param = 0
-    result = plot_errorsum(n,r,beta,100,False,method,param)
-    log_errorsim('error_sims_results.json',n,beta,r,result,method,param)
+    param = 2
+    #result = plot_errorsum(n,r,beta,100,False,method,param)
+    #log_errorsim('error_sims_results.json',n,beta,r,result,method,param)
 
     #plot_errorsum(n,r,beta,100,True,phi_test,2)
+
+    #TODO: Extract results and plot them
+    with open('error_sims_results.json') as file:
+        data = json.load(file)
+    HC_results = data["HC"]["n"][str(n)]["beta_fix"]["result"]
+    cscshm_results = data["CsCsHM"]["n"][str(n)]["beta_fix"]["result"]
+    phi0_results = data[str(method.__name__)]["n"][str(n)]["parameter"]["0"]["beta_fix"]["result"]
+    phi1_results = data[str(method.__name__)]["n"][str(n)]["parameter"]["1"]["beta_fix"]["result"]
+    phi2_results = data[str(method.__name__)]["n"][str(n)]["parameter"]["2"]["beta_fix"]["result"]
+
+    plt.plot(r,HC_results)
+    plt.plot(r,cscshm_results)
+    # plt.plot(r,phi0_results)
+    # plt.plot(r,phi1_results)
+    plt.plot(r,phi2_results)
+    plt.xlabel(r'$r$')
+    plt.ylabel('Error sum')
+    plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
+    #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
+    plt.title(r'Sum of type I and II errors as a function of $r$, $\beta$ = ' + str(beta) + r", $n$ = " + str(n))
+    plt.show()
 
 
 
