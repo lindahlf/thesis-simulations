@@ -109,6 +109,10 @@ def sim_critval(n,alpha,method,*args):
 
 def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
     """Plots sum of type I and II errors as a function of either r or beta"""
+    if len(args) != 0:
+        print("Running simulation for " + str(method.__name__) + " with n = " + str(n) + " and parameter = " + str(args[0]))
+    else:
+        print("Running simulation for " + str(method.__name__) + " with n = " + str(n))
     critical_value = get_critval(n,method,*args)
     if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
         errors = [None] * len(r)
@@ -153,6 +157,10 @@ def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
                 plt.title('Sum of type I and II error for ' + str(method.__name__))
             plt.legend((r'$n = $' + str(n) + r' $r = $' + str(beta),), loc = 'best')
             plt.show()
+    if len(args) != 0:
+        print("Finished simulation for " + str(method.__name__) + " with n = " + str(n) + " and parameter = " + str(args[0]))
+    else:
+        print("Finished simulation for " + str(method.__name__) + " with n = " + str(n))
     return errors
 
 def get_critval(n,method,*args):
@@ -171,34 +179,38 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
         data = json.load(file)
     if len(args) != 0:
         if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
-            data[str(method)]["n"][str(n)][parameters][str(args[0])]["beta_fix"]["result"] = result
-            data[str(method)]["n"][str(n)][parameters][str(args[0])]["beta_fix"]["beta"] = beta
-            data[str(method)]["n"][str(n)][parameters][str(args[0])]["beta_fix"]["r"] = r
+            r = r.tolist()
+            data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["beta_fix"]["result"] = result
+            data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["beta_fix"]["beta"] = beta
+            data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["beta_fix"]["r"] = r
 
         elif hasattr(beta, "__len__") and hasattr(r, "__len__") == False:
-                data[str(method)]["n"][str(n)][parameters][str(args[0])]["r_fix"]["result"] = result
-                data[str(method)]["n"][str(n)][parameters][str(args[0])]["r_fix"]["beta"] = beta
-                data[str(method)]["n"][str(n)][parameters][str(args[0])]["r_fix"]["r"] = r
+            beta = beta.tolist()
+            data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["r_fix"]["result"] = result
+            data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["r_fix"]["beta"] = beta
+            data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["r_fix"]["r"] = r
     else:
         if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
-            data[str(method)]["n"][str(n)]["beta_fix"]["result"] = result
-            data[str(method)]["n"][str(n)]["beta_fix"]["beta"] = beta
-            data[str(method)]["n"][str(n)]["beta_fix"]["r"] = r
+            r = r.tolist()
+            data[str(method.__name__)]["n"][str(n)]["beta_fix"]["result"] = result
+            data[str(method.__name__)]["n"][str(n)]["beta_fix"]["beta"] = beta
+            data[str(method.__name__)]["n"][str(n)]["beta_fix"]["r"] = r
 
         elif hasattr(beta, "__len__") and hasattr(r, "__len__") == False:
-                data[str(method)]["n"][str(n)]["r_fix"]["result"] = result
-                data[str(method)]["n"][str(n)]["r_fix"]["beta"] = beta
-                data[str(method)]["n"][str(n)]["r_fix"]["r"] = r
+            beta = beta.tolist()
+            data[str(method.__name__)]["n"][str(n)]["r_fix"]["result"] = result
+            data[str(method.__name__)]["n"][str(n)]["r_fix"]["beta"] = beta
+            data[str(method.__name__)]["n"][str(n)]["r_fix"]["r"] = r
 
     with open(filename, 'w') as outfile:
         json.dump(data, outfile)
     return
 
-def foofunc(n,*args):
-
+def footest(n,*args):
     if len(args) != 0:
-        print("hej kom o hjälp mig")
+        print("failure")
     return
+
 ################
 # Main program #
 ################
@@ -206,13 +218,13 @@ def foofunc(n,*args):
 # Example use
 
 def main():
-    n = int(1e2)
+    n = int(1e4)
     beta = 0.8
     r = np.linspace(0.01,0.9,100)
-    method = HC
-    result = plot_errorsum(n,r,beta,100,False,method)
-    log_errorsim('error_sims_results.json',n,beta,r,result,HC)
-
+    method = phi_test
+    param = 0
+    result = plot_errorsum(n,r,beta,100,False,method,param)
+    log_errorsim('error_sims_results.json',n,beta,r,result,method,param)
 
     #plot_errorsum(n,r,beta,100,True,phi_test,2)
 
