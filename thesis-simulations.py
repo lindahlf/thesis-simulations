@@ -217,24 +217,24 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
 # Example use
 
 def main():
-    n = int(1e2)
-    beta = 0.8
+    n = int(1e4)
+    beta = 0.3
     r = np.linspace(0.01,0.9,100)
     method = phi_test
-    param = 2
+    param = 0
     #result = plot_errorsum(n,r,beta,100,False,method,param)
-    #log_errorsim('error_sims_results.json',n,beta,r,result,method,param)
+    #log_errorsim('beta0_3.json',n,beta,r,result,method,param)
 
     #plot_errorsum(n,r,beta,100,True,phi_test,2)
 
-    #TODO: Extract results and plot them
-    with open('error_sims_results.json') as file:
+    # Extract results and plot them
+    with open('beta0_3.json') as file:
         data = json.load(file)
     HC_results = data["HC"]["n"][str(n)]["beta_fix"]["result"]
     cscshm_results = data["CsCsHM"]["n"][str(n)]["beta_fix"]["result"]
-    phi0_results = data[str(method.__name__)]["n"][str(n)]["parameter"]["0"]["beta_fix"]["result"]
-    phi1_results = data[str(method.__name__)]["n"][str(n)]["parameter"]["1"]["beta_fix"]["result"]
-    phi2_results = data[str(method.__name__)]["n"][str(n)]["parameter"]["2"]["beta_fix"]["result"]
+    phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["beta_fix"]["result"]
+    phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["beta_fix"]["result"]
+    phi2_results = data["phi_test"]["n"][str(n)]["parameter"]["2"]["beta_fix"]["result"]
 
     plt.plot(r,HC_results)
     plt.plot(r,cscshm_results)
