@@ -114,6 +114,7 @@ def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
     else:
         print("Running simulation for " + str(method.__name__) + " with n = " + str(n))
     critical_value = get_critval(n,method,*args)
+    # TODO: add additional elif, when both r and beta are arrays
     if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
         errors = [None] * len(r)
         for i in tqdm(range(len(r))):
@@ -157,6 +158,7 @@ def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
                 plt.title('Sum of type I and II error for ' + str(method.__name__))
             plt.legend((r'$n = $' + str(n) + r' $r = $' + str(beta),), loc = 'best')
             plt.show()
+
     if len(args) != 0:
         print("Finished simulation for " + str(method.__name__) + " with n = " + str(n) + " and parameter = " + str(args[0]))
     else:
@@ -206,10 +208,6 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
         json.dump(data, outfile)
     return
 
-
-
-
-
 ################
 # Main program #
 ################
@@ -217,18 +215,18 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
 # Example use
 
 def main():
-    n = int(1e4)
-    beta = 0.3
+    n = int(1e2)
+    beta = 0.51
     r = np.linspace(0.01,0.9,100)
-    method = phi_test
-    param = 0
-    #result = plot_errorsum(n,r,beta,100,False,method,param)
-    #log_errorsim('beta0_3.json',n,beta,r,result,method,param)
+    method = CsCsHM
+    param = 2
+    # result = plot_errorsum(n,r,beta,100,False,method)
+    # log_errorsim('beta0_51.json',n,beta,r,result,method)
 
     #plot_errorsum(n,r,beta,100,True,phi_test,2)
 
     # Extract results and plot them
-    with open('beta0_3.json') as file:
+    with open('beta0_51.json') as file:
         data = json.load(file)
     HC_results = data["HC"]["n"][str(n)]["beta_fix"]["result"]
     cscshm_results = data["CsCsHM"]["n"][str(n)]["beta_fix"]["result"]
