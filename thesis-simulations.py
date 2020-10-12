@@ -114,7 +114,6 @@ def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
     else:
         print("Running simulation for " + str(method.__name__) + " with n = " + str(n))
     critical_value = get_critval(n,method,*args)
-    # TODO: add additional elif, when both r and beta are arrays
     if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
         errors = [None] * len(r)
         for i in tqdm(range(len(r))):
@@ -143,6 +142,8 @@ def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
         errors = [None] * len(beta)
         for i in tqdm(range(len(beta))):
             null_scores, alt_scores = simulate_scores(n,beta[i],r,repetitions,method,*args)
+            null_scores = np.asarray(null_scores)
+            alt_scores = np.asarray(alt_scores)
             null_scores = np.where(null_scores > critical_value, null_scores, 0)
             null_scores = np.where(null_scores <= critical_value, null_scores, 1)
             alt_scores = np.where(alt_scores > critical_value, alt_scores, 0)
@@ -158,7 +159,25 @@ def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
                 plt.title('Sum of type I and II error for ' + str(method.__name__))
             plt.legend((r'$n = $' + str(n) + r' $r = $' + str(beta),), loc = 'best')
             plt.show()
-
+    elif hasattr(beta, "__len__") and hasattr(r, "__len__"):
+        # TODO: add additional elif, when both r and beta are arrays
+        assert len(beta) == len(r)
+        errors = [None] * len(beta)
+        for i in tqdm(range(len(beta))):
+            null_scores, alt_scores = simulate_scores(n,beta[i],r[i],repetitions,method,*args)
+            null_scores = np.asarray(null_scores)
+            alt_scores = np.asarray(alt_scores)
+            null_scores = np.where(null_scores > critical_value, null_scores, 0)
+            null_scores = np.where(null_scores <= critical_value, null_scores, 1)
+            alt_scores = np.where(alt_scores > critical_value, alt_scores, 0)
+            alt_scores = np.where(alt_scores <= critical_value, alt_scores, 1)
+            errors[i] = np.sum(null_scores)/repetitions + (repetitions-np.sum(alt_scores))/(repetitions)
+        if verbose:
+            fig, axs = plt.subplots(2)
+            fig.suptitle('Sum of type I and II errors along detection boundary')
+            axs[0].plot(beta,errors)
+            axs[1].plot(r,errors)
+            plt.show()
     if len(args) != 0:
         print("Finished simulation for " + str(method.__name__) + " with n = " + str(n) + " and parameter = " + str(args[0]))
     else:
@@ -185,24 +204,34 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
             data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["beta_fix"]["result"] = result
             data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["beta_fix"]["beta"] = beta
             data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["beta_fix"]["r"] = r
-
         elif hasattr(beta, "__len__") and hasattr(r, "__len__") == False:
             beta = beta.tolist()
             data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["r_fix"]["result"] = result
             data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["r_fix"]["beta"] = beta
             data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["r_fix"]["r"] = r
+        elif hasattr(beta, "__len__") and hasattr(r, "__len__"):
+            beta = beta.tolist()
+            r = r.tolist()
+            data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["result"] = result
+            data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["beta"] = beta
+            data[str(method.__name__)]["n"][str(n)]["parameter"][str(args[0])]["r"] = r
     else:
         if hasattr(r, "__len__") and hasattr(beta, "__len__") == False:
             r = r.tolist()
             data[str(method.__name__)]["n"][str(n)]["beta_fix"]["result"] = result
             data[str(method.__name__)]["n"][str(n)]["beta_fix"]["beta"] = beta
             data[str(method.__name__)]["n"][str(n)]["beta_fix"]["r"] = r
-
         elif hasattr(beta, "__len__") and hasattr(r, "__len__") == False:
             beta = beta.tolist()
             data[str(method.__name__)]["n"][str(n)]["r_fix"]["result"] = result
             data[str(method.__name__)]["n"][str(n)]["r_fix"]["beta"] = beta
             data[str(method.__name__)]["n"][str(n)]["r_fix"]["r"] = r
+        elif hasattr(beta, "__len__") and hasattr(r, "__len__"):
+            beta = beta.tolist()
+            r = r.tolist()
+            data[str(method.__name__)]["n"][str(n)]["result"] = result
+            data[str(method.__name__)]["n"][str(n)]["beta"] = beta
+            data[str(method.__name__)]["n"][str(n)]["r"] = r
 
     with open(filename, 'w') as outfile:
         json.dump(data, outfile)
@@ -215,24 +244,52 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
 # Example use
 
 def main():
-    n = int(1e2)
-    beta = 0.51
-    r = np.linspace(0.01,0.9,100)
-    method = CsCsHM
+    n = int(1e4)
+    #beta = 0.51
+    beta1 = np.linspace(0.5,0.75,100)
+    beta2 = np.linspace(0.75,1,100)
+    r1 =  beta1 - 0.5
+    r2 = (1-np.sqrt(1-beta2))**2
+    beta = np.concatenate([beta1,beta2])
+    r = np.concatenate([r1,r2])
+    #r = np.linspace(0.01,0.9,100)
+    method = phi_test
     param = 2
-    # result = plot_errorsum(n,r,beta,100,False,method)
-    # log_errorsim('beta0_51.json',n,beta,r,result,method)
+    # result = plot_errorsum(n,r,beta,100,False,method,param)
+    # log_errorsim('r_and_beta.json',n,beta,r,result,method,param)
 
     #plot_errorsum(n,r,beta,100,True,phi_test,2)
 
     # Extract results and plot them
-    with open('beta0_51.json') as file:
+    # with open('beta0_51.json') as file:
+    #     data = json.load(file)
+    # HC_results = data["HC"]["n"][str(n)]["beta_fix"]["result"]
+    # cscshm_results = data["CsCsHM"]["n"][str(n)]["beta_fix"]["result"]
+    # phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["beta_fix"]["result"]
+    # phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["beta_fix"]["result"]
+    # phi2_results = data["phi_test"]["n"][str(n)]["parameter"]["2"]["beta_fix"]["result"]
+    #
+    # plt.plot(r,HC_results)
+    # plt.plot(r,cscshm_results)
+    # # plt.plot(r,phi0_results)
+    # # plt.plot(r,phi1_results)
+    # plt.plot(r,phi2_results)
+    # plt.xlabel(r'$r$')
+    # plt.ylabel('Error sum')
+    # plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
+    # #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
+    # plt.title(r'Sum of type I and II errors as a function of $r$, $\beta$ = ' + str(beta) + r", $n$ = " + str(n))
+    # plt.show()
+
+
+    # Extract detection boundary results and plot them
+    with open('r_and_beta.json') as file:
         data = json.load(file)
-    HC_results = data["HC"]["n"][str(n)]["beta_fix"]["result"]
-    cscshm_results = data["CsCsHM"]["n"][str(n)]["beta_fix"]["result"]
-    phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["beta_fix"]["result"]
-    phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["beta_fix"]["result"]
-    phi2_results = data["phi_test"]["n"][str(n)]["parameter"]["2"]["beta_fix"]["result"]
+    HC_results = data["HC"]["n"][str(n)]["result"]
+    cscshm_results = data["CsCsHM"]["n"][str(n)]["result"]
+    phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["result"]
+    phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["result"]
+    phi2_results = data["phi_test"]["n"][str(n)]["parameter"]["2"]["result"]
 
     plt.plot(r,HC_results)
     plt.plot(r,cscshm_results)
@@ -243,7 +300,7 @@ def main():
     plt.ylabel('Error sum')
     plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
     #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
-    plt.title(r'Sum of type I and II errors as a function of $r$, $\beta$ = ' + str(beta) + r", $n$ = " + str(n))
+    plt.title(r'Sum of type I and II errors as a function of $r$ along detection boundary' + str(beta) + r", $n$ = " + str(n))
     plt.show()
 
 
