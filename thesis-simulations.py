@@ -5,11 +5,12 @@ import random as rnd
 import matplotlib.patches as mpatches
 import json
 import pandas as pd
+from scipy.signal import savgol_filter
 from scipy.stats import norm
 from tqdm import tqdm
 
-#plt.style.use("seaborn")
-plt.style.use("cyberpunk")
+plt.style.use("seaborn")
+#plt.style.use("cyberpunk")
 
 def HC(p_values):
     """ Compute higher criticism-statistic based on version by Donoho and Jin (2004) """
@@ -244,15 +245,19 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
 # Example use
 
 def main():
-    n = int(1e4)
-    #beta = 0.51
-    beta1 = np.linspace(0.5,0.75,100)
-    beta2 = np.linspace(0.75,1,100)
-    r1 =  beta1 - 0.5
-    r2 = (1-np.sqrt(1-beta2))**2
-    beta = np.concatenate([beta1,beta2])
-    r = np.concatenate([r1,r2])
-    #r = np.linspace(0.01,0.9,100)
+    n = int(1e2)
+    ######## Plot with beta fixed ######
+    beta = 0.8
+    r = np.linspace(0.01,0.9,100)
+
+    ######## Plot on detection boundary ######
+    # beta1 = np.linspace(0.5,0.75,100)
+    # beta2 = np.linspace(0.75,1,100)
+    # r1 =  beta1 - 0.5
+    # r2 = (1-np.sqrt(1-beta2))**2
+    # beta = np.concatenate([beta1,beta2])
+    # r = np.concatenate([r1,r2])
+
     method = phi_test
     param = 2
     # result = plot_errorsum(n,r,beta,100,False,method,param)
@@ -260,48 +265,68 @@ def main():
 
     #plot_errorsum(n,r,beta,100,True,phi_test,2)
 
+    width = 1.2 # set linewidth
     # Extract results and plot them
-    # with open('beta0_51.json') as file:
-    #     data = json.load(file)
-    # HC_results = data["HC"]["n"][str(n)]["beta_fix"]["result"]
-    # cscshm_results = data["CsCsHM"]["n"][str(n)]["beta_fix"]["result"]
-    # phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["beta_fix"]["result"]
-    # phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["beta_fix"]["result"]
-    # phi2_results = data["phi_test"]["n"][str(n)]["parameter"]["2"]["beta_fix"]["result"]
-    #
-    # plt.plot(r,HC_results)
-    # plt.plot(r,cscshm_results)
-    # # plt.plot(r,phi0_results)
-    # # plt.plot(r,phi1_results)
-    # plt.plot(r,phi2_results)
-    # plt.xlabel(r'$r$')
-    # plt.ylabel('Error sum')
-    # plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
-    # #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
-    # plt.title(r'Sum of type I and II errors as a function of $r$, $\beta$ = ' + str(beta) + r", $n$ = " + str(n))
-    # plt.show()
-
-
-    # Extract detection boundary results and plot them
-    with open('r_and_beta.json') as file:
+    with open('beta0_8.json') as file:
         data = json.load(file)
-    HC_results = data["HC"]["n"][str(n)]["result"]
-    cscshm_results = data["CsCsHM"]["n"][str(n)]["result"]
-    phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["result"]
-    phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["result"]
-    phi2_results = data["phi_test"]["n"][str(n)]["parameter"]["2"]["result"]
+    HC_results = data["HC"]["n"][str(n)]["beta_fix"]["result"]
+    cscshm_results = data["CsCsHM"]["n"][str(n)]["beta_fix"]["result"]
+    phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["beta_fix"]["result"]
+    phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["beta_fix"]["result"]
+    phi2_results = data["phi_test"]["n"][str(n)]["parameter"]["2"]["beta_fix"]["result"]
 
-    plt.plot(r,HC_results)
-    plt.plot(r,cscshm_results)
+    plt.plot(r,HC_results, linewidth=width)
+    plt.plot(r,cscshm_results, linewidth=width)
     # plt.plot(r,phi0_results)
     # plt.plot(r,phi1_results)
-    plt.plot(r,phi2_results)
+    plt.plot(r,phi2_results, linewidth=width)
     plt.xlabel(r'$r$')
     plt.ylabel('Error sum')
     plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
     #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
-    plt.title(r'Sum of type I and II errors as a function of $r$ along detection boundary' + str(beta) + r", $n$ = " + str(n))
+    plt.title(r'Sum of type I and II errors as a function of $r$, $\beta$ = ' + str(beta) + r", $n$ = " + str(n))
+    #figname = "beta0_8"  + "n" + str(n) + ".eps"
+    #plt.savefig(figname, format = 'eps', dpi = 1200)
     plt.show()
+
+    # #idx = range(0,len(r))
+    # idx = range(0,round(len(r)/4))
+    # idx = 4*np.asarray(idx)
+    # # Extract detection boundary results and plot them
+    # with open('r_and_beta.json') as file:
+    #     data = json.load(file)
+    # HC_results = np.asarray(data["HC"]["n"][str(n)]["result"])
+    # cscshm_results = np.asarray(data["CsCsHM"]["n"][str(n)]["result"])
+    # # phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["result"]
+    # # phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["result"]
+    # phi2_results = np.asarray(data["phi_test"]["n"][str(n)]["parameter"]["2"]["result"])
+    # plt.figure(1)
+    # plt.plot(r[idx],HC_results[idx], linewidth=width)
+    # plt.plot(r[idx],cscshm_results[idx], linewidth=width)
+    # # plt.plot(r,phi0_results)
+    # # plt.plot(r,phi1_results)
+    # plt.plot(r[idx],phi2_results[idx], linewidth=width)
+    # plt.xlabel(r'$r$')
+    # plt.ylabel('Error sum')
+    # #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
+    # #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
+    # plt.title(r'Sum of type I and II errors as a function of $r$ along detection boundary' + r", $n$ = " + str(n))
+    # fig1 = 'r_errorsum_detbound_n' + str(n) + '.eps'
+    # #plt.savefig(fig1, format = 'eps', dpi = 1200)
+    # plt.figure(2)
+    # plt.plot(beta[idx],HC_results[idx], linewidth=width)
+    # plt.plot(beta[idx],cscshm_results[idx], linewidth=width)
+    # # plt.plot(r,phi0_results)
+    # # plt.plot(r,phi1_results)
+    # plt.plot(beta[idx],phi2_results[idx], linewidth=width)
+    # plt.xlabel(r'$\beta$')
+    # plt.ylabel('Error sum')
+    # plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
+    # #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
+    # plt.title(r'Sum of type I and II errors as a function of $\beta$ along detection boundary' + r", $n$ = " + str(n))
+    # fig2 = 'beta_errorsum_detbound_n' + str(n) + '.eps'
+    # #plt.savefig(fig2, format = 'eps', dpi = 1200)
+    # plt.show()
 
 
 
