@@ -161,7 +161,6 @@ def plot_errorsum(n,r,beta,repetitions,verbose,method, *args):
             plt.legend((r'$n = $' + str(n) + r' $r = $' + str(beta),), loc = 'best')
             plt.show()
     elif hasattr(beta, "__len__") and hasattr(r, "__len__"):
-        # TODO: add additional elif, when both r and beta are arrays
         assert len(beta) == len(r)
         errors = [None] * len(beta)
         for i in tqdm(range(len(beta))):
@@ -238,6 +237,12 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
         json.dump(data, outfile)
     return
 
+def detbound():
+    """Plot of detection boundary"""
+    return
+
+
+
 ################
 # Main program #
 ################
@@ -245,10 +250,21 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
 # Example use
 
 def main():
-    n = int(1e2)
+    n = int(1e6)
     ######## Plot with beta fixed ######
-    beta = 0.8
-    r = np.linspace(0.01,0.9,100)
+    beta = 0.55
+    r = 0.9
+    #r = np.linspace(0.01,0.9,100)
+
+    ######## Test estimation function ########
+    null_samples, alt_samples = gaussian_mixture(n,beta,r)
+    mu_vec = esimate_signals(alt_samples,2)
+    #print(mu_vec[np.nonzero(mu_vec)])
+    print("True mu = " + str(np.sqrt(2*r*np.log(n))))
+    print("Median of mu_vec = " + str(np.median(mu_vec[np.nonzero(mu_vec)])))
+    print("Lower 10% of mu_vec = " + str(np.percentile(mu_vec[np.nonzero(mu_vec)],10)))
+    # plt.hist(mu_vec[np.nonzero(mu_vec)], bins = len(mu_vec[np.nonzero(mu_vec)]))
+    # plt.show()
 
     ######## Plot on detection boundary ######
     # beta1 = np.linspace(0.5,0.75,100)
@@ -267,27 +283,27 @@ def main():
 
     width = 1.2 # set linewidth
     # Extract results and plot them
-    with open('beta0_8.json') as file:
-        data = json.load(file)
-    HC_results = data["HC"]["n"][str(n)]["beta_fix"]["result"]
-    cscshm_results = data["CsCsHM"]["n"][str(n)]["beta_fix"]["result"]
-    phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["beta_fix"]["result"]
-    phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["beta_fix"]["result"]
-    phi2_results = data["phi_test"]["n"][str(n)]["parameter"]["2"]["beta_fix"]["result"]
-
-    plt.plot(r,HC_results, linewidth=width)
-    plt.plot(r,cscshm_results, linewidth=width)
-    # plt.plot(r,phi0_results)
-    # plt.plot(r,phi1_results)
-    plt.plot(r,phi2_results, linewidth=width)
-    plt.xlabel(r'$r$')
-    plt.ylabel('Error sum')
-    plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
-    #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
-    plt.title(r'Sum of type I and II errors as a function of $r$, $\beta$ = ' + str(beta) + r", $n$ = " + str(n))
-    #figname = "beta0_8"  + "n" + str(n) + ".eps"
-    #plt.savefig(figname, format = 'eps', dpi = 1200)
-    plt.show()
+    # with open('beta0_8.json') as file:
+    #     data = json.load(file)
+    # HC_results = data["HC"]["n"][str(n)]["beta_fix"]["result"]
+    # cscshm_results = data["CsCsHM"]["n"][str(n)]["beta_fix"]["result"]
+    # # phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["beta_fix"]["result"]
+    # # phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["beta_fix"]["result"]
+    # phi2_results = data["phi_test"]["n"][str(n)]["parameter"]["2"]["beta_fix"]["result"]
+    #
+    # plt.plot(r,HC_results, linewidth=width)
+    # plt.plot(r,cscshm_results, linewidth=width)
+    # # plt.plot(r,phi0_results)
+    # # plt.plot(r,phi1_results)
+    # plt.plot(r,phi2_results, linewidth=width)
+    # plt.xlabel(r'$r$')
+    # plt.ylabel('Error sum')
+    # plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
+    # #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
+    # plt.title(r'Sum of type I and II errors as a function of $r$, $\beta$ = ' + str(beta) + r", $n$ = " + str(n))
+    # #figname = "beta0_8"  + "n" + str(n) + ".eps"
+    # #plt.savefig(figname, format = 'eps', dpi = 1200)
+    # plt.show()
 
     # #idx = range(0,len(r))
     # idx = range(0,round(len(r)/4))
