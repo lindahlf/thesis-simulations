@@ -257,12 +257,12 @@ def main():
     #r = np.linspace(0.01,0.9,100)
 
     ######## Test estimation function ########
-    null_samples, alt_samples = gaussian_mixture(n,beta,r)
-    mu_vec = esimate_signals(alt_samples,2)
+#    null_samples, alt_samples = gaussian_mixture(n,beta,r)
+
     #print(mu_vec[np.nonzero(mu_vec)])
-    print("True mu = " + str(np.sqrt(2*r*np.log(n))))
-    print("Median of mu_vec = " + str(np.median(mu_vec[np.nonzero(mu_vec)])))
-    print("Lower 10% of mu_vec = " + str(np.percentile(mu_vec[np.nonzero(mu_vec)],10)))
+    # print("True mu = " + str(np.sqrt(2*r*np.log(n))))
+    # print("Median of mu_vec = " + str(np.median(mu_vec[np.nonzero(mu_vec)])))
+    # print("Lower 10% of mu_vec = " + str(np.percentile(mu_vec[np.nonzero(mu_vec)],10)))
     # plt.hist(mu_vec[np.nonzero(mu_vec)], bins = len(mu_vec[np.nonzero(mu_vec)]))
     # plt.show()
 
