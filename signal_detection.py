@@ -5,9 +5,12 @@ import random as rnd
 import matplotlib.patches as mpatches
 import json
 import pandas as pd
+import tikzplotlib
+import pandas as pd
 from scipy.signal import savgol_filter
 from scipy.stats import norm
 from tqdm import tqdm
+
 
 plt.style.use("seaborn")
 #plt.style.use("cyberpunk")
@@ -239,6 +242,32 @@ def log_errorsim(filename, n, beta, r, result, method, *args):
 
 def detbound():
     """Plot of detection boundary"""
+    beta1 = np.linspace(0.5,0.75,100)
+    beta2 = np.linspace(0.75,1,100)
+    r1 =  beta1 - 0.5
+    r2 = (1-np.sqrt(1-beta2))**2
+    beta = np.concatenate([beta1,beta2])
+    r = np.concatenate([r1,r2])
+    estbeta = np.linspace(0.5,1,200)
+    estr = np.linspace(0.5,1,200)
+    plt.plot(beta,r)
+    plt.plot(estbeta,estr)
+    plt.ylim(0,1)
+    plt.xlim(0.5,1)
+    # plt.fill_between(beta, r, estr, alpha=0.7, label='Signals estimable')
+    # plt.fill_between(beta, r, estr, alpha=0.7, label='Detection of signals impossible')
+    # plt.fill_between(estbeta, estr, 1.2, alpha=0.7, label = 'Estimation of signals possible')
+    fntsize = 14
+    plt.text(0.6,0.8,'Signals estimable', fontsize = fntsize)
+    plt.text(0.7,0.5,'Signals detecable', fontsize = fntsize)
+    plt.text(0.8,0.2,'Signals undetectable', fontsize = fntsize)
+    plt.xlabel(r'$\beta$')
+    plt.ylabel(r'$r(\beta)$')
+    plt.title("Detection boundary")
+    #plt.legend(loc = 4)
+    #plt.savefig('figures/detbound.eps', dpi = 1200)
+    tikzplotlib.save("figures/detbound.tex")
+    plt.show()
     return
 
 
@@ -250,11 +279,11 @@ def detbound():
 # Example use
 
 def main():
-    n = int(1e6)
+    n = int(1e2)
     ######## Plot with beta fixed ######
-    beta = 0.55
-    r = 0.9
-    #r = np.linspace(0.01,0.9,100)
+    beta = 0.51
+    # r = 0.9
+    r = np.linspace(0.01,0.9,100)
 
     ######## Test estimation function ########
 #    null_samples, alt_samples = gaussian_mixture(n,beta,r)
@@ -283,7 +312,7 @@ def main():
 
     width = 1.2 # set linewidth
     # Extract results and plot them
-    # with open('beta0_8.json') as file:
+    # with open('results/beta0_51.json') as file:
     #     data = json.load(file)
     # HC_results = data["HC"]["n"][str(n)]["beta_fix"]["result"]
     # cscshm_results = data["CsCsHM"]["n"][str(n)]["beta_fix"]["result"]
@@ -301,33 +330,47 @@ def main():
     # plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
     # #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
     # plt.title(r'Sum of type I and II errors as a function of $r$, $\beta$ = ' + str(beta) + r", $n$ = " + str(n))
-    # #figname = "beta0_8"  + "n" + str(n) + ".eps"
+    # figname = "figures/beta0_51"  + "n" + str(n) + ".tex"
     # #plt.savefig(figname, format = 'eps', dpi = 1200)
+    # tikzplotlib.save(figname)
     # plt.show()
 
-    # #idx = range(0,len(r))
+    idx = range(0,len(r))
     # idx = range(0,round(len(r)/4))
     # idx = 4*np.asarray(idx)
-    # # Extract detection boundary results and plot them
-    # with open('r_and_beta.json') as file:
+
+    ########### Extract detection boundary results and plot them ###########
+    # with open('results/r_and_beta.json') as file:
     #     data = json.load(file)
     # HC_results = np.asarray(data["HC"]["n"][str(n)]["result"])
     # cscshm_results = np.asarray(data["CsCsHM"]["n"][str(n)]["result"])
     # # phi0_results = data["phi_test"]["n"][str(n)]["parameter"]["0"]["result"]
     # # phi1_results = data["phi_test"]["n"][str(n)]["parameter"]["1"]["result"]
     # phi2_results = np.asarray(data["phi_test"]["n"][str(n)]["parameter"]["2"]["result"])
+    #
+    # ###### Making moving average to smooth plot ######
+    # N = 10
+    # HC_results_padded = np.pad(HC_results, (N//2, N-1-N//2), mode='edge')
+    # cscshm_results_padded = np.pad(cscshm_results, (N//2, N-1-N//2), mode='edge')
+    # phi2_results_padded = np.pad(phi2_results, (N//2, N-1-N//2), mode='edge')
+    #
+    # HC_results = np.convolve(HC_results_padded, np.ones((N,))/N, mode='valid')
+    # cscshm_results = np.convolve(cscshm_results_padded, np.ones((N,))/N, mode='valid')
+    # phi2_results = np.convolve(phi2_results_padded, np.ones((N,))/N, mode='valid')
+    #
     # plt.figure(1)
-    # plt.plot(r[idx],HC_results[idx], linewidth=width)
-    # plt.plot(r[idx],cscshm_results[idx], linewidth=width)
+    # plt.plot(r,HC_results, linewidth=width)
+    # plt.plot(r,cscshm_results, linewidth=width)
     # # plt.plot(r,phi0_results)
     # # plt.plot(r,phi1_results)
     # plt.plot(r[idx],phi2_results[idx], linewidth=width)
     # plt.xlabel(r'$r$')
     # plt.ylabel('Error sum')
-    # #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
+    # plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
     # #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
     # plt.title(r'Sum of type I and II errors as a function of $r$ along detection boundary' + r", $n$ = " + str(n))
-    # fig1 = 'r_errorsum_detbound_n' + str(n) + '.eps'
+    # fig1 = 'figures/r_errorsum_detbound_n' + str(n) + '.tex'
+    # tikzplotlib.save(fig1)
     # #plt.savefig(fig1, format = 'eps', dpi = 1200)
     # plt.figure(2)
     # plt.plot(beta[idx],HC_results[idx], linewidth=width)
@@ -340,11 +383,10 @@ def main():
     # plt.legend(("HC","CsCsHM",r"$\varphi$, s = 2"))
     # #plt.legend(("HC","CsCsHM",r"$\varphi$, s = 0", r"$\varphi$, s = 1", r"$\varphi$, s = 2"))
     # plt.title(r'Sum of type I and II errors as a function of $\beta$ along detection boundary' + r", $n$ = " + str(n))
-    # fig2 = 'beta_errorsum_detbound_n' + str(n) + '.eps'
+    # fig2 = 'figures/beta_errorsum_detbound_n' + str(n) + '.tex'
     # #plt.savefig(fig2, format = 'eps', dpi = 1200)
+    # tikzplotlib.save(fig2)
     # plt.show()
-
-
 
     # null_scores, alt_scores = simulate_scores(n,beta,r,100,CsCsHM)
     # #  null_HC, alt_HC = simulate_scores(n,beta,r,100,HC)
@@ -356,8 +398,5 @@ def main():
     # # #axs[1].hist(alt_HC, bins = 100, range = [0,100])
     # mplcyberpunk.add_glow_effects()
     # plt.show()
-
-
-
 
 main()
