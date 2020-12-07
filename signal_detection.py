@@ -15,14 +15,17 @@ from tqdm import tqdm
 plt.style.use("seaborn")
 #plt.style.use("cyberpunk")
 
-def HC(p_values):
+def HC(p_values,*args):
     """ Compute higher criticism-statistic based on version by Donoho and Jin (2004) """
     p_values = np.sort(p_values) # Make sure p-values are sorted in ascending order
     n = len(p_values) # Number of data points
     ivalues = np.arange(1, n + 1)
     #p_values = p_values[0:int(round(n/2))] # Cut-off half of the values
     HC_vec = np.sqrt(n)*(ivalues/(n+1) - p_values)/np.sqrt(p_values - p_values**2) # Calculate scores for all datapoints
-    return np.max(HC_vec)
+    if len(args) != 0:
+        return np.max(HC_vec), np.argmax(HC_vec)
+    else:
+        return np.max(HC_vec)
 
 def phi_test(p_values,s):
     """ Computes Jager and Wellner's (2007) phi-divergence based test.
@@ -45,14 +48,14 @@ def _phi(s,x):
         return (1-s+s*x-x**s)/(s*(1-s))
 
 def CsCsHM(p_values):
-    """Computes  statistic based on results by Stepanova and Pavlenko (2018)"""
+    """Computes CsCsHM statistic based on results by Stepanova and Pavlenko (2018)"""
     u = np.sort(p_values) # Assert p-values are sorted, translate to notation of Stepanova and Pavlenko
     n = len(u) # Number of data points
     ivalues = np.arange(1,n+1)
     T = np.sqrt(n)*(ivalues/(n+1) - u)/np.sqrt(u*(1-u)*np.log(np.log(1/(u*(1-u)))))
     return np.max(T)
 
-def gaussian_mixture(n,beta,r):
+def gaussian_mixture(n,beta,r,*args):
     """ Returns a sparse Gaussian mixture and a standard Gaussian of size n.
     Standard corresponds to the null hypothesis,
     the mixture corresponds to alternative hypothesis. See Donoho and Jin (2004)
@@ -67,14 +70,20 @@ def gaussian_mixture(n,beta,r):
     alt_samples2 = np.random.normal(mu, 1, round(n*epsilon))
     alt_samples = np.concatenate([alt_samples1,alt_samples2])
     assert len(null_samples) == len(alt_samples)
-    return null_samples, alt_samples
+    if len(args) != 0:
+        idx_vec = np.arange(len(alt_samples1),len(alt_samples)) # index of non-null signals
+        truth_labels = np.zeros(n)
+        truth_labels[idx_vec] = 1
+        return null_samples, alt_samples, truth_labels
+    else:
+        return null_samples, alt_samples
 
-def calc_pvalue(data,two_side = False):
+def calc_pvalue(data, loc = 0, scale = 1,two_side = False):
     """ Returns one-sided (default) or two-sided p-values of input array of data """
     if two_side:
         return 2*(1-norm.cdf(np.abs(data)))
     else:
-        return (1 - norm.cdf(data))
+        return (1 - norm.cdf(data, loc = loc, scale = scale))
 
 def simulate_scores(n,beta,r,repetitions,method,*args):
     """ Computes scores for a given detection method for a number of repetitions. """
@@ -267,6 +276,39 @@ def detbound():
     #plt.legend(loc = 4)
     #plt.savefig('figures/detbound.eps', dpi = 1200)
     tikzplotlib.save("figures/detbound.tex")
+    plt.show()
+    return
+
+def full_detbound():
+    """Plot of the complete detection phase-space"""
+    beta1 = np.linspace(0.5,0.75,100)
+    beta2 = np.linspace(0.75,1,100)
+    r1 =  beta1 - 0.5
+    r2 = (1-np.sqrt(1-beta2))**2
+    beta = np.concatenate([beta1,beta2])
+    r = np.concatenate([r1,r2])
+    estbeta = np.linspace(0.5,1,200)
+    estr = np.linspace(0.5,1,200)
+    new_r = (1+np.sqrt(1-beta))**2
+    plt.plot(beta,r)
+    plt.plot(estbeta,estr)
+    plt.plot(beta,new_r)
+    plt.ylim(0,3.5)
+    plt.xlim(0.5,1)
+    # plt.fill_between(beta, r, estr, alpha=0.7, label='Signals estimable')
+    # plt.fill_between(beta, r, estr, alpha=0.7, label='Detection of signals impossible')
+    # plt.fill_between(estbeta, estr, 1.2, alpha=0.7, label = 'Estimation of signals possible')
+    fntsize = 14
+    plt.text(0.6,1.4,'Signals estimable', fontsize = fntsize)
+    plt.text(0.7,0.5,'Signals detectable', fontsize = fntsize)
+    plt.text(0.85,0.15,'Signals undetectable', fontsize = fntsize)
+    plt.text(0.8,2.7,'Signals recoverable', fontsize = fntsize)
+    plt.xlabel(r'$\beta$')
+    plt.ylabel(r'$r(\beta)$')
+    plt.title("Full detection phase space")
+    #plt.legend(loc = 4)
+    #plt.savefig('figures/detbound.eps', dpi = 1200)
+    tikzplotlib.save("figures/full_detbound.tex")
     plt.show()
     return
 
